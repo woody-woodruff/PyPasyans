@@ -569,8 +569,8 @@ def _debug_dump(x: int, y: int) -> None:
         if plan is not None and card < len(plan):
             line += f" wedges={[int(w) for w in plan[card]]}"
     _debug_text.configure(state='normal')
-    _debug_text.insert('end', line + '\n')
-    _debug_text.see('end')
+    _debug_text.insert('1.0', line + '\n')
+    _debug_text.see('1.0')
     _debug_text.configure(state='disabled')
 ############################################################################################################################
 # UI callbacks
@@ -1633,8 +1633,14 @@ def main() -> None:
         frm, height=10, width=80, font=('Courier', 12),
         state='disabled', bg=CLR_BG, fg=CLR_TEXT,
     )
-    _debug_text.grid(column=0, row=_btn_row + 2, columnspan=GRID_COLS,
-                     sticky='ew', padx=4, pady=(4, 2))
+    # Normally hidden: the panel is only gridded when --debug is passed; it
+    # sits below everything else on the page.  When hidden the reference is
+    # dropped so _debug_dump() no-ops entirely.
+    if args.debug:
+        _debug_text.grid(column=0, row=_btn_row + 2, columnspan=GRID_COLS,
+                         sticky='ew', padx=4, pady=(4, 2))
+    else:
+        _debug_text = None
 
     # ---------------------------------------------------------------------------
     # Embed frm into the scrollable canvas (must be last)

@@ -90,6 +90,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=None, type=str,
     )
     p.add_argument(
+        "--debug",
+        help="Show the debug text panel at the bottom of the window (hidden "
+             "by default).  Card clicks log state lines to it, newest first.",
+        action="store_true", dest="debug",
+    )
+    p.add_argument(
         "-b", "--border",
         help="Highlight-border thickness in pixels for matched cards.",
         default=5, type=int,

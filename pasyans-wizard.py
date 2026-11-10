@@ -199,6 +199,14 @@ def build_argv(cfg: dict, cwd: pathlib.Path) -> list[str]:
         _require_int(seed, "Seed", lo=None, hi=None)
         argv += ["--seed", str(seed)]
 
+    # --- void cells & debug panel (pass-through; the engine validates) ----
+    void = cfg.get("void")
+    if void:
+        argv += ["--void", str(void)]
+
+    if cfg.get("debug"):
+        argv += ["--debug"]
+
     # --- split axis (only meaningful without --sources, but harmless) ----
     split_axis = cfg.get("split_axis")
     if split_axis:
@@ -354,6 +362,8 @@ class WizardApp(tk.Tk):
         self.var_rows = self._int_choice(GRID_DIM_PRESETS, 1, 64, "Grid rows")
         self.var_cols = self._int_choice(GRID_DIM_PRESETS, 1, 64, "Grid columns")
         self.var_seed = tk.StringVar(value="")
+        self.var_void = tk.StringVar(value="")
+        self.var_debug = tk.BooleanVar(value=False)
         self.var_split = tk.StringVar(value="random")
         self.var_random = tk.BooleanVar(value=False)
         self.var_nodup = tk.BooleanVar(value=False)
@@ -428,6 +438,11 @@ class WizardApp(tk.Tk):
                         command=self._refresh_preview).grid(row=7, column=1, sticky="w")
         self._combo_row(frm, 8, "Grid rows", self.var_rows)
         self._combo_row(frm, 9, "Grid cols", self.var_cols)
+        ttk.Label(frm, text="Void cells").grid(row=10, column=0, sticky="e", padx=6, pady=2)
+        ttk.Entry(frm, textvariable=self.var_void, width=24).grid(
+            row=10, column=1, sticky="w", pady=2)
+        ttk.Checkbutton(frm, text="Show debug text", variable=self.var_debug).grid(
+            row=11, column=1, sticky="w")
         row += 1
 
         # Preview + actions
@@ -469,6 +484,8 @@ class WizardApp(tk.Tk):
             "rows": int(self.var_rows.value()),
             "cols": int(self.var_cols.value()),
             "seed": int(seed) if seed else None,
+            "void": self.var_void.get().strip(),
+            "debug": bool(self.var_debug.get()),
             "split_axis": self.var_split.get(),
             "random_cards": self.var_random.get(),
             "no_duplicates": self.var_nodup.get(),
