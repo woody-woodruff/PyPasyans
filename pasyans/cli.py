@@ -82,6 +82,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=5, type=int,
     )
     p.add_argument(
+        "--void",
+        help="JSON list of [col, row] pairs that are out of play: cells that "
+             "never hold a card and show the plain background instead of a "
+             "card back.  Positive indices count from the top/left, negative "
+             "from the bottom/right, e.g. '[[0,0],[-1,-1]]'.",
+        default=None, type=str,
+    )
+    p.add_argument(
         "-b", "--border",
         help="Highlight-border thickness in pixels for matched cards.",
         default=5, type=int,

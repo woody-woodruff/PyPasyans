@@ -166,6 +166,11 @@ __all__: List[str] = []   # nothing is intended to be imported from this module
 #: run out (cells > cards) or go unused (cards > cells).
 GRID_ROWS: int = GRID_SIZE
 GRID_COLS: int = GRID_SIZE
+
+#: Cells excluded from play via ``--void`` (normalised in main()).  A set of
+#: ``(x, y)`` tuples; void cells never hold a card and render as a plain
+#: background-coloured tile instead of a card back.
+void_cells: set = set()
 ############################################################################################################################
 # ScrollableFrame
 ############################################################################################################################
@@ -869,6 +874,11 @@ def click_card(x: int, y: int) -> None:
         x: Column index ``[0, GRID_SIZE)``.
         y: Row index ``[0, GRID_SIZE)``.
     """
+    # Void cells are out of play: a click on one does nothing at all —
+    # no reseed, no draw.  They are permanently-unassigned slots.
+    if (x, y) in void_cells:
+        return
+
     # ---- Mystical RNG reseed ------------------------------------------------
     # INTENTIONAL: Re-seed from system entropy on EVERY user interaction.
     # This creates the "mystical connection" where the exact timing of clicks
@@ -1092,7 +1102,7 @@ def main() -> None:
     All state lives in module globals (declared below) because the Tk
     callbacks defined above reference them by name at call time.
     """
-    global _btn_row, _card_back_pil, _debug_text, _details_btn, _i, _ld_cx, _ld_cy, _ld_drw, _ld_r, _loading_overlay, _parser, _progress, _seed_var, _status_matches, _status_msg, _status_revealed, _style, args, bttn, bttn_spread, c, canvas, card, card_defs, card_defs_csv, card_dir, card_list, card_list_csv, card_size, cols, compositor, container, currs, deck, f, face, faces, flat, frm, gap, h, header_frm, i, ids, images, mat_border, mat_cnt, mat_rots, matches, nats, on_disk, org_rots, out, pimages, plan, pool, r, root, rots, rows, sec, sheet, spread, status_frm, t0, w, wdir, x, x_scrollbar, y, y_scrollbar
+    global _btn_row, _card_back_pil, _debug_text, _details_btn, _i, _ld_cx, _ld_cy, _ld_drw, _ld_r, _loading_overlay, _parser, _progress, _seed_var, _status_matches, _status_msg, _status_revealed, _style, args, bttn, bttn_spread, c, canvas, card, card_defs, card_defs_csv, card_dir, card_list, card_list_csv, card_size, cols, compositor, container, currs, deck, f, face, faces, flat, frm, gap, h, header_frm, i, ids, images, mat_border, mat_cnt, mat_rots, matches, nats, on_disk, org_rots, out, pimages, plan, pool, r, root, rots, rows, sec, sheet, spread, status_frm, t0, void_cells, w, wdir, x, x_scrollbar, y, y_scrollbar
 
 
 
@@ -1102,6 +1112,23 @@ def main() -> None:
     global GRID_ROWS, GRID_COLS
     GRID_ROWS = args.rows
     GRID_COLS = args.cols
+
+    # Void cells: normalise --void [col, row] pairs into absolute (x, y)
+    # tuples.  Positive indices count from the top/left, negative from the
+    # bottom/right (Python-style).  Fail loudly on anything malformed.
+    if args.void:
+        try:
+            pairs = json.loads(args.void)
+            if not isinstance(pairs, list):
+                raise ValueError("expected a JSON list of [col, row] pairs")
+            for col, row in pairs:
+                x = int(col) if int(col) >= 0 else GRID_COLS + int(col)
+                y = int(row) if int(row) >= 0 else GRID_ROWS + int(row)
+                if not (0 <= x < GRID_COLS and 0 <= y < GRID_ROWS):
+                    raise ValueError(f"void cell [{col}, {row}] lies outside the grid")
+                void_cells.add((x, y))
+        except (ValueError, TypeError) as exc:
+            _parser.error(f"--void: {exc}")
 
     # Fail loudly on a bad source directory.  Silently falling back to procedural
     # placeholders is what makes a typo'd path look like a crash under a GUI
@@ -1504,8 +1531,11 @@ def main() -> None:
 
     # All slots start showing the card-back pattern.  The actual face is pasted in
     # lazily when the player first reveals that slot.
-    for _i in range(GRID_ROWS * GRID_COLS):
-        pimages.append(ImageTk.PhotoImage(_card_back_pil.copy()))
+    _void_pil = Image.new('RGB', (card_size, card_size), CLR_BG)
+    for _y in range(GRID_ROWS):
+        for _x in range(GRID_COLS):
+            _base = _void_pil if (_x, _y) in void_cells else _card_back_pil
+            pimages.append(ImageTk.PhotoImage(_base.copy()))
 
 
     ############################################################################################################################
@@ -1546,7 +1576,7 @@ def main() -> None:
                 bd=0,                       # zero border so mat_border highlight is the only frame
                 relief='flat',
                 bg=CLR_BG, activebackground=CLR_BG,
-                cursor='hand2',             # visual affordance that cards are clickable
+                cursor='arrow' if (x, y) in void_cells else 'hand2',  # voids are inert
             )
             bttn_spread.append(bttn)
             bttn.grid(column=x, row=y, padx=2, pady=2)
