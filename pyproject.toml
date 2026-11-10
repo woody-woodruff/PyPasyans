@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pypasyans"
+version = "0.4.0"
+description = "Pasyans divination-deck engine: Tkinter GUI, in-memory card compositor, and card-set toolchain."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "PyPasyans contributors" }]
+keywords = ["cartomancy", "pasyans", "divination", "tkinter", "card-composition"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: MacOS X",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+]
+dependencies = [
+    "numpy>=2.0",
+    "Pillow>=10.0",
+]
+
+[tool.setuptools]
+packages = ["pasyans"]
+
+[tool.pytest.ini_options]
+testpaths = ["utils/tests"]

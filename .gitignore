@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.DS_Store
+.spyproject/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+sessions/pasyans_*.json
